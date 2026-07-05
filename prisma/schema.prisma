@@ -1,0 +1,114 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum FormFieldType {
+  TEXT
+  NUMBER
+  DATE
+  SELECT
+  MULTI_SELECT
+  BOOLEAN
+  FILE
+  EMAIL
+  PHONE
+  TEXTAREA
+}
+
+model FederationNode {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  parentId  String?  @map("parent_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  isActive  Boolean  @default(true) @map("is_active")
+  isDelete  Boolean  @default(false) @map("is_delete")
+
+  parent   FederationNode?  @relation("FederationHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children FederationNode[] @relation("FederationHierarchy")
+
+  forms FederationForm[]
+  users FederationUser[]
+
+  @@index([parentId])
+  @@map("federation_nodes")
+}
+
+model FederationForm {
+  id               String   @id @default(uuid()) @db.Uuid
+  federationNodeId String   @map("federation_node_id") @db.Uuid
+  name             String
+  version          Int      @default(1)
+  isActive         Boolean  @default(true) @map("is_active")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  federationNode FederationNode   @relation(fields: [federationNodeId], references: [id], onDelete: Cascade)
+  fields         FormField[]
+  users          FederationUser[]
+
+  @@index([federationNodeId])
+  @@unique([federationNodeId, name, version])
+  @@map("federation_forms")
+}
+
+model FormField {
+  id         String        @id @default(uuid()) @db.Uuid
+  formId     String        @map("form_id") @db.Uuid
+  fieldKey   String        @map("field_key")
+  label      String
+  fieldType  FormFieldType @map("field_type")
+  isRequired Boolean       @default(false) @map("is_required")
+  sortOrder  Int           @default(0) @map("sort_order")
+  options    Json?
+  createdAt  DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  form FederationForm @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  @@index([formId])
+  @@unique([formId, fieldKey])
+  @@map("form_fields")
+}
+
+model ApprovalStatus {
+  id    Int    @id @default(autoincrement())
+  name  String
+  value Int    @unique
+
+  users FederationUser[]
+
+  @@map("approval_statuses")
+}
+
+
+model FederationUser {
+  id               String   @id @default(uuid()) @db.Uuid
+  federationNodeId String   @map("federation_node_id") @db.Uuid
+  formId           String   @map("form_id") @db.Uuid
+
+  name        String
+  email       String
+  phoneNumber String  @map("phone_number")
+  address     String?
+  approvalStatus Int   @default(1) @map("approval_status")
+
+  dynamicFields Json    @default("{}") @map("dynamic_fields")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  federationNode FederationNode @relation(fields: [federationNodeId], references: [id], onDelete: Restrict)
+  form           FederationForm @relation(fields: [formId], references: [id], onDelete: Restrict)
+  status         ApprovalStatus @relation(fields: [approvalStatus], references: [value], onDelete: Restrict)
+
+  @@index([federationNodeId])
+  @@index([formId])
+  @@index([email])
+  @@index([phoneNumber])
+  @@map("federation_users")
+}
