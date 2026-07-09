@@ -13,6 +13,8 @@ enum FormFieldType {
   DATE
   SELECT
   MULTI_SELECT
+  CHECKBOX
+  RADIO
   BOOLEAN
   FILE
   EMAIL

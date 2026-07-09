@@ -2,6 +2,53 @@ const express = require("express")
 const router = express.Router()
 const prisma = require("../utils/prismaClient")
 
+const VALID_FIELD_TYPES = new Set([
+  "TEXT",
+  "NUMBER",
+  "DATE",
+  "SELECT",
+  "MULTI_SELECT",
+  "BOOLEAN",
+  "FILE",
+  "EMAIL",
+  "PHONE",
+  "TEXTAREA",
+  "CHECKBOX",
+  "RADIO",
+])
+
+function normalizeFieldType(fieldType) {
+  const upper = String(fieldType || "").toUpperCase()
+
+  // UI aliases -> Prisma enum values
+
+  return upper
+}
+
+function normalizeFieldOptions(options) {
+  if (options == null) return null
+  if (Array.isArray(options)) return options
+  if (typeof options === "string") {
+    return options
+      .split(/\r?\n|,/)
+      .map((item) => item.trim())
+      .filter(Boolean)
+  }
+  return options
+}
+
+function normalizeIncomingFields(fields = []) {
+  return fields.map((field) => ({
+    ...field,
+    fieldType: normalizeFieldType(field.fieldType),
+    options: normalizeFieldOptions(field.options),
+  }))
+}
+
+function findInvalidFieldType(fields = []) {
+  return fields.find((field) => !VALID_FIELD_TYPES.has(field.fieldType))
+}
+
 // POST /api/forms
 // Body for create: { federationNodeId, name, version?, isActive?, fields: [ { fieldKey, label, fieldType, isRequired?, sortOrder?, options? } ] }
 router.post("/", async (req, res) => {
@@ -15,6 +62,16 @@ router.post("/", async (req, res) => {
         .status(400)
         .json({ message: "federationNodeId and name are required for create" })
 
+    const normalizedFields = normalizeIncomingFields(
+      Array.isArray(body.fields) ? body.fields : [],
+    )
+    const invalidField = findInvalidFieldType(normalizedFields)
+    if (invalidField) {
+      return res.status(400).json({
+        message: `Invalid fieldType '${invalidField.fieldType}' for field '${invalidField.fieldKey || invalidField.label || "unknown"}'`,
+      })
+    }
+
     const created = await prisma.$transaction(async (tx) => {
       const createdForm = await tx.federationForm.create({
         data: {
@@ -25,8 +82,7 @@ router.post("/", async (req, res) => {
         },
       })
 
-      const fields = Array.isArray(body.fields) ? body.fields : []
-      for (const f of fields) {
+      for (const f of normalizedFields) {
         await tx.formField.create({
           data: {
             formId: createdForm.id,
@@ -62,6 +118,16 @@ router.put("/:id", async (req, res) => {
     const body = req.body
     if (!body) return res.status(400).json({ message: "No body provided" })
 
+    const normalizedFields = normalizeIncomingFields(
+      Array.isArray(body.fields) ? body.fields : [],
+    )
+    const invalidField = findInvalidFieldType(normalizedFields)
+    if (invalidField) {
+      return res.status(400).json({
+        message: `Invalid fieldType '${invalidField.fieldType}' for field '${invalidField.fieldKey || invalidField.label || "unknown"}'`,
+      })
+    }
+
     const updated = await prisma.$transaction(async (tx) => {
       const existing = await tx.federationForm.findUnique({
         where: { id },
@@ -83,7 +149,7 @@ router.put("/:id", async (req, res) => {
 
       await tx.federationForm.update({ where: { id }, data: formData })
 
-      const incomingFields = Array.isArray(body.fields) ? body.fields : []
+      const incomingFields = normalizedFields
       const incomingIds = incomingFields
         .filter((f) => f && f.id)
         .map((f) => f.id)
