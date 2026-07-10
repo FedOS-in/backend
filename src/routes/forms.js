@@ -241,4 +241,27 @@ router.get("/:id", async (req, res) => {
   }
 })
 
+router.delete("/:id", async (req, res) => {
+  try {
+    const existing = await prisma.federationForm.findUnique({
+      where: { id: req.params.id },
+      select: { id: true },
+    })
+
+    if (!existing) {
+      return res.status(404).json({ message: "Form not found" })
+    }
+
+    await prisma.federationForm.delete({
+      where: { id: req.params.id },
+    })
+
+    return res.status(204).send()
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: "Failed to delete form", error: error.message })
+  }
+})
+
 module.exports = router

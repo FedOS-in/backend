@@ -221,6 +221,17 @@ curl -X PUT http://127.0.0.1:3001/api/forms/59afa937-3004-4a83-a7de-e88ac8149936
 
 ---
 
+### Delete a form
+- Endpoint: `DELETE /api/forms/:id`
+- Description: Permanently deletes a form.
+
+Example:
+```bash
+curl -X DELETE http://127.0.0.1:3001/api/forms/59afa937-3004-4a83-a7de-e88ac8149936
+```
+
+---
+
 ## Approval Statuses
 
 ### Get all approval statuses
