@@ -3,6 +3,7 @@
 This document describes the current backend API endpoints.
 
 Base URL:
+
 - http://127.0.0.1:3001/api
 
 ---
@@ -10,10 +11,12 @@ Base URL:
 ## Federation Nodes
 
 ### Get all federation nodes
+
 - Endpoint: `GET /api/federation-nodes`
 - Description: Returns all federation nodes that are not soft deleted.
 
 Example:
+
 ```bash
 curl http://127.0.0.1:3001/api/federation-nodes
 ```
@@ -21,10 +24,12 @@ curl http://127.0.0.1:3001/api/federation-nodes
 ---
 
 ### Get a federation node by ID
+
 - Endpoint: `GET /api/federation-nodes/:id`
 - Description: Returns a single federation node by UUID, including parent, children, forms, and users.
 
 Example:
+
 ```bash
 curl http://127.0.0.1:3001/api/federation-nodes/8094cda1-2010-42aa-afe8-fb5146352343
 ```
@@ -32,9 +37,11 @@ curl http://127.0.0.1:3001/api/federation-nodes/8094cda1-2010-42aa-afe8-fb514635
 ---
 
 ### Create a federation node
+
 - Endpoint: `POST /api/federation-nodes`
 - Description: Creates a new federation node.
 - Request body:
+
 ```json
 {
   "name": "National Federation",
@@ -44,6 +51,7 @@ curl http://127.0.0.1:3001/api/federation-nodes/8094cda1-2010-42aa-afe8-fb514635
 ```
 
 Example:
+
 ```bash
 curl -X POST http://127.0.0.1:3001/api/federation-nodes \
   -H "Content-Type: application/json" \
@@ -57,9 +65,11 @@ curl -X POST http://127.0.0.1:3001/api/federation-nodes \
 ---
 
 ### Update a federation node
+
 - Endpoint: `PUT /api/federation-nodes/:id`
 - Description: Updates an existing federation node.
 - Request body:
+
 ```json
 {
   "name": "National Federation Updated",
@@ -68,6 +78,7 @@ curl -X POST http://127.0.0.1:3001/api/federation-nodes \
 ```
 
 Example:
+
 ```bash
 curl -X PUT http://127.0.0.1:3001/api/federation-nodes/8094cda1-2010-42aa-afe8-fb5146352343 \
   -H "Content-Type: application/json" \
@@ -82,10 +93,12 @@ curl -X PUT http://127.0.0.1:3001/api/federation-nodes/8094cda1-2010-42aa-afe8-f
 ## Federation Forms
 
 ### Get all forms
+
 - Endpoint: `GET /api/forms`
 - Description: Returns all forms with their nested fields.
 
 Example:
+
 ```bash
 curl http://127.0.0.1:3001/api/forms
 ```
@@ -93,10 +106,12 @@ curl http://127.0.0.1:3001/api/forms
 ---
 
 ### Get form by ID
+
 - Endpoint: `GET /api/forms/:id`
 - Description: Returns a single form by UUID with its fields.
 
 Example:
+
 ```bash
 curl http://127.0.0.1:3001/api/forms/59afa937-3004-4a83-a7de-e88ac8149936
 ```
@@ -104,9 +119,11 @@ curl http://127.0.0.1:3001/api/forms/59afa937-3004-4a83-a7de-e88ac8149936
 ---
 
 ### Create a form
+
 - Endpoint: `POST /api/forms`
 - Description: Creates a new form and nested fields in one request.
 - Request body:
+
 ```json
 {
   "federationNodeId": "38777c39-75a3-4459-a032-74c0bcca8a7d",
@@ -133,6 +150,7 @@ curl http://127.0.0.1:3001/api/forms/59afa937-3004-4a83-a7de-e88ac8149936
 ```
 
 Example:
+
 ```bash
 curl -X POST http://127.0.0.1:3001/api/forms \
   -H "Content-Type: application/json" \
@@ -163,9 +181,11 @@ curl -X POST http://127.0.0.1:3001/api/forms \
 ---
 
 ### Update a form
+
 - Endpoint: `PUT /api/forms/:id`
 - Description: Updates form metadata and synchronizes nested fields.
 - Request body example:
+
 ```json
 {
   "name": "Sample Form Updated",
@@ -192,6 +212,7 @@ curl -X POST http://127.0.0.1:3001/api/forms \
 ```
 
 Example:
+
 ```bash
 curl -X PUT http://127.0.0.1:3001/api/forms/59afa937-3004-4a83-a7de-e88ac8149936 \
   -H "Content-Type: application/json" \
@@ -222,10 +243,12 @@ curl -X PUT http://127.0.0.1:3001/api/forms/59afa937-3004-4a83-a7de-e88ac8149936
 ---
 
 ### Delete a form
+
 - Endpoint: `DELETE /api/forms/:id`
 - Description: Permanently deletes a form.
 
 Example:
+
 ```bash
 curl -X DELETE http://127.0.0.1:3001/api/forms/59afa937-3004-4a83-a7de-e88ac8149936
 ```
@@ -235,10 +258,12 @@ curl -X DELETE http://127.0.0.1:3001/api/forms/59afa937-3004-4a83-a7de-e88ac8149
 ## Approval Statuses
 
 ### Get all approval statuses
+
 - Endpoint: `GET /api/approval-statuses`
 - Description: Returns all approval status records.
 
 Example:
+
 ```bash
 curl http://127.0.0.1:3001/api/approval-statuses
 ```
@@ -246,10 +271,12 @@ curl http://127.0.0.1:3001/api/approval-statuses
 ---
 
 ### Get approval status by ID
+
 - Endpoint: `GET /api/approval-statuses/:id`
 - Description: Returns a single approval status record.
 
 Example:
+
 ```bash
 curl http://127.0.0.1:3001/api/approval-statuses/1
 ```
@@ -257,9 +284,11 @@ curl http://127.0.0.1:3001/api/approval-statuses/1
 ---
 
 ### Create an approval status
+
 - Endpoint: `POST /api/approval-statuses`
 - Description: Creates a new approval status.
 - Request body:
+
 ```json
 {
   "name": "Pending",
@@ -268,6 +297,7 @@ curl http://127.0.0.1:3001/api/approval-statuses/1
 ```
 
 Example:
+
 ```bash
 curl -X POST http://127.0.0.1:3001/api/approval-statuses \
   -H "Content-Type: application/json" \
@@ -280,9 +310,11 @@ curl -X POST http://127.0.0.1:3001/api/approval-statuses \
 ---
 
 ### Update an approval status
+
 - Endpoint: `PUT /api/approval-statuses/:id`
 - Description: Updates the name and/or value of an approval status.
 - Request body example:
+
 ```json
 {
   "name": "Approved",
@@ -291,6 +323,7 @@ curl -X POST http://127.0.0.1:3001/api/approval-statuses \
 ```
 
 Example:
+
 ```bash
 curl -X PUT http://127.0.0.1:3001/api/approval-statuses/1 \
   -H "Content-Type: application/json" \
@@ -303,10 +336,12 @@ curl -X PUT http://127.0.0.1:3001/api/approval-statuses/1 \
 ---
 
 ### Delete an approval status
+
 - Endpoint: `DELETE /api/approval-statuses/:id`
 - Description: Deletes the approval status record.
 
 Example:
+
 ```bash
 curl -X DELETE http://127.0.0.1:3001/api/approval-statuses/1
 ```
@@ -316,6 +351,7 @@ curl -X DELETE http://127.0.0.1:3001/api/approval-statuses/1
 ## Federation Users
 
 ### Get all federation users
+
 - Endpoint: `GET /api/federation-users`
 - Description: Returns all federation users. Supports optional query filters:
   - `federationNodeId`
@@ -323,11 +359,13 @@ curl -X DELETE http://127.0.0.1:3001/api/approval-statuses/1
   - `approvalStatus`
 
 Example:
+
 ```bash
 curl http://127.0.0.1:3001/api/federation-users
 ```
 
 Example with filter:
+
 ```bash
 curl "http://127.0.0.1:3001/api/federation-users?federationNodeId=38777c39-75a3-4459-a032-74c0bcca8a7d"
 ```
@@ -335,10 +373,12 @@ curl "http://127.0.0.1:3001/api/federation-users?federationNodeId=38777c39-75a3-
 ---
 
 ### Get a federation user by ID
+
 - Endpoint: `GET /api/federation-users/:id`
 - Description: Returns a specific federation user.
 
 Example:
+
 ```bash
 curl http://127.0.0.1:3001/api/federation-users/1b53b56a-6f26-4eff-a11d-d670aaa48d14
 ```
@@ -346,23 +386,31 @@ curl http://127.0.0.1:3001/api/federation-users/1b53b56a-6f26-4eff-a11d-d670aaa4
 ---
 
 ### Create a federation user
+
 - Endpoint: `POST /api/federation-users`
 - Description: Creates a federation user record.
 - Request body:
+
 ```json
 {
   "federationNodeId": "38777c39-75a3-4459-a032-74c0bcca8a7d",
   "formId": "59afa937-3004-4a83-a7de-e88ac8149936",
   "name": "John Doe",
   "email": "john@example.com",
-  "phoneNumber": "1234567890",
-  "address": "123 Main St",
+  "phoneNumber": "+911234567890",
+  "addressLine1": "123 Main St",
+  "addressLine2": "Apartment 10",
+  "city": "Chennai",
+  "state": "Tamil Nadu",
+  "pincode": "600001",
+  "password": "StrongPass@123",
   "approvalStatus": 1,
   "dynamicFields": { "age": 30 }
 }
 ```
 
 Example:
+
 ```bash
 curl -X POST http://127.0.0.1:3001/api/federation-users \
   -H "Content-Type: application/json" \
@@ -371,8 +419,13 @@ curl -X POST http://127.0.0.1:3001/api/federation-users \
     "formId": "59afa937-3004-4a83-a7de-e88ac8149936",
     "name": "John Doe",
     "email": "john@example.com",
-    "phoneNumber": "1234567890",
-    "address": "123 Main St",
+    "phoneNumber": "+911234567890",
+    "addressLine1": "123 Main St",
+    "addressLine2": "Apartment 10",
+    "city": "Chennai",
+    "state": "Tamil Nadu",
+    "pincode": "600001",
+    "password": "StrongPass@123",
     "approvalStatus": 1,
     "dynamicFields": { "age": 30 }
   }'
@@ -381,6 +434,7 @@ curl -X POST http://127.0.0.1:3001/api/federation-users \
 ---
 
 ### Update a federation user
+
 - Endpoint: `PUT /api/federation-users/:id`
 - Description: Updates one or more federation user fields.
 - Request body can contain any of:
@@ -389,11 +443,17 @@ curl -X POST http://127.0.0.1:3001/api/federation-users \
   - `name`
   - `email`
   - `phoneNumber`
-  - `address`
+  - `addressLine1`
+  - `addressLine2`
+  - `city`
+  - `state`
+  - `pincode`
+  - `password` (plain password is accepted and stored as a hash)
   - `approvalStatus`
   - `dynamicFields`
 
 Example:
+
 ```bash
 curl -X PUT http://127.0.0.1:3001/api/federation-users/1b53b56a-6f26-4eff-a11d-d670aaa48d14 \
   -H "Content-Type: application/json" \
@@ -406,10 +466,12 @@ curl -X PUT http://127.0.0.1:3001/api/federation-users/1b53b56a-6f26-4eff-a11d-d
 ---
 
 ### Delete a federation user
+
 - Endpoint: `DELETE /api/federation-users/:id`
 - Description: Deletes the federation user record.
 
 Example:
+
 ```bash
 curl -X DELETE http://127.0.0.1:3001/api/federation-users/1b53b56a-6f26-4eff-a11d-d670aaa48d14
 ```
@@ -417,6 +479,7 @@ curl -X DELETE http://127.0.0.1:3001/api/federation-users/1b53b56a-6f26-4eff-a11
 ---
 
 ## Notes
+
 - API uses Prisma and PostgreSQL.
 - `POST /api/forms` creates nested `FormField` records.
 - `PUT /api/forms/:id` reconciles form fields by updating existing fields, creating new fields, and deleting removed ones.

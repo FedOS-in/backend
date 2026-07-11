@@ -97,7 +97,12 @@ model FederationUser {
   name        String
   email       String
   phoneNumber String  @map("phone_number")
-  address     String?
+  addressLine1 String  @map("address_line_1")
+  addressLine2 String? @map("address_line_2")
+  city         String
+  state        String
+  pincode      String
+  passwordHash String  @map("password_hash")
   approvalStatus Int   @default(1) @map("approval_status")
 
   dynamicFields Json    @default("{}") @map("dynamic_fields")
