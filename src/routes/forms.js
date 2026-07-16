@@ -17,12 +17,61 @@ const VALID_FIELD_TYPES = new Set([
   "RADIO",
 ])
 
+const VALID_PAYMENT_PERIODS = new Set(["PRE_APPROVAL", "POST_APPROVAL"])
+
 function normalizeFieldType(fieldType) {
   const upper = String(fieldType || "").toUpperCase()
 
   // UI aliases -> Prisma enum values
 
   return upper
+}
+
+function normalizePaymentPeriod(paymentPeriod) {
+  if (paymentPeriod == null || paymentPeriod === "") return null
+  return String(paymentPeriod).toUpperCase()
+}
+
+function normalizeSubscriptionAmount(subscriptionAmount) {
+  if (subscriptionAmount == null || subscriptionAmount === "") return null
+  const amount = Number(subscriptionAmount)
+  if (Number.isNaN(amount)) return NaN
+  return amount
+}
+
+function validateSubscriptionFields({ subscriptionAmount, paymentPeriod, required }) {
+  const normalizedAmount = normalizeSubscriptionAmount(subscriptionAmount)
+  const normalizedPeriod = normalizePaymentPeriod(paymentPeriod)
+
+  if (required) {
+    if (normalizedAmount == null || Number.isNaN(normalizedAmount)) {
+      return { error: "subscriptionAmount is required and must be a valid number" }
+    }
+    if (normalizedAmount < 0) {
+      return { error: "subscriptionAmount must be a non-negative number" }
+    }
+    if (!normalizedPeriod) {
+      return { error: "paymentPeriod is required" }
+    }
+  } else if (normalizedAmount != null) {
+    if (Number.isNaN(normalizedAmount)) {
+      return { error: "subscriptionAmount must be a valid number" }
+    }
+    if (normalizedAmount < 0) {
+      return { error: "subscriptionAmount must be a non-negative number" }
+    }
+  }
+
+  if (normalizedPeriod && !VALID_PAYMENT_PERIODS.has(normalizedPeriod)) {
+    return {
+      error: `Invalid paymentPeriod '${paymentPeriod}'. Allowed values: PRE_APPROVAL, POST_APPROVAL`,
+    }
+  }
+
+  return {
+    subscriptionAmount: normalizedAmount,
+    paymentPeriod: normalizedPeriod,
+  }
 }
 
 function normalizeFieldOptions(options) {
@@ -50,7 +99,7 @@ function findInvalidFieldType(fields = []) {
 }
 
 // POST /api/forms
-// Body for create: { federationNodeId, name, version?, isActive?, fields: [ { fieldKey, label, fieldType, isRequired?, sortOrder?, options? } ] }
+// Body for create: { federationNodeId, name, subscriptionAmount, paymentPeriod, version?, isActive?, fields: [ { fieldKey, label, fieldType, isRequired?, sortOrder?, options? } ] }
 router.post("/", async (req, res) => {
   try {
     const body = req.body
@@ -61,6 +110,15 @@ router.post("/", async (req, res) => {
       return res
         .status(400)
         .json({ message: "federationNodeId and name are required for create" })
+
+    const subscriptionValidation = validateSubscriptionFields({
+      subscriptionAmount: body.subscriptionAmount,
+      paymentPeriod: body.paymentPeriod,
+      required: true,
+    })
+    if (subscriptionValidation.error) {
+      return res.status(400).json({ message: subscriptionValidation.error })
+    }
 
     const normalizedFields = normalizeIncomingFields(
       Array.isArray(body.fields) ? body.fields : [],
@@ -79,6 +137,8 @@ router.post("/", async (req, res) => {
           name,
           version: typeof version === "number" ? version : 1,
           isActive: typeof isActive === "boolean" ? isActive : true,
+          subscriptionAmount: subscriptionValidation.subscriptionAmount,
+          paymentPeriod: subscriptionValidation.paymentPeriod,
         },
       })
 
@@ -118,6 +178,28 @@ router.put("/:id", async (req, res) => {
     const body = req.body
     if (!body) return res.status(400).json({ message: "No body provided" })
 
+    const hasSubscriptionAmount = Object.prototype.hasOwnProperty.call(
+      body,
+      "subscriptionAmount",
+    )
+    const hasPaymentPeriod = Object.prototype.hasOwnProperty.call(
+      body,
+      "paymentPeriod",
+    )
+    let subscriptionValidation = null
+    if (hasSubscriptionAmount || hasPaymentPeriod) {
+      subscriptionValidation = validateSubscriptionFields({
+        subscriptionAmount: hasSubscriptionAmount
+          ? body.subscriptionAmount
+          : undefined,
+        paymentPeriod: hasPaymentPeriod ? body.paymentPeriod : undefined,
+        required: hasSubscriptionAmount && hasPaymentPeriod,
+      })
+      if (subscriptionValidation.error) {
+        return res.status(400).json({ message: subscriptionValidation.error })
+      }
+    }
+
     const normalizedFields = normalizeIncomingFields(
       Array.isArray(body.fields) ? body.fields : [],
     )
@@ -146,6 +228,10 @@ router.put("/:id", async (req, res) => {
         formData.version = body.version
       if (Object.prototype.hasOwnProperty.call(body, "isActive"))
         formData.isActive = body.isActive
+      if (hasSubscriptionAmount)
+        formData.subscriptionAmount = subscriptionValidation.subscriptionAmount
+      if (hasPaymentPeriod)
+        formData.paymentPeriod = subscriptionValidation.paymentPeriod
 
       await tx.federationForm.update({ where: { id }, data: formData })
 

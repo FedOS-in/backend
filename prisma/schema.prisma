@@ -22,6 +22,11 @@ enum FormFieldType {
   TEXTAREA
 }
 
+enum PaymentPeriod {
+  PRE_APPROVAL
+  POST_APPROVAL
+}
+
 model FederationNode {
   id        String   @id @default(uuid()) @db.Uuid
   name      String
@@ -42,13 +47,15 @@ model FederationNode {
 }
 
 model FederationForm {
-  id               String   @id @default(uuid()) @db.Uuid
-  federationNodeId String   @map("federation_node_id") @db.Uuid
-  name             String
-  version          Int      @default(1)
-  isActive         Boolean  @default(true) @map("is_active")
-  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id                 String         @id @default(uuid()) @db.Uuid
+  federationNodeId   String         @map("federation_node_id") @db.Uuid
+  name               String
+  version            Int            @default(1)
+  isActive           Boolean        @default(true) @map("is_active")
+  subscriptionAmount Decimal?       @map("subscription_amount") @db.Decimal(12, 2)
+  paymentPeriod      PaymentPeriod? @map("payment_period")
+  createdAt          DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   federationNode FederationNode   @relation(fields: [federationNodeId], references: [id], onDelete: Cascade)
   fields         FormField[]
