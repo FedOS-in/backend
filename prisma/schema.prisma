@@ -95,6 +95,14 @@ model ApprovalStatus {
   @@map("approval_statuses")
 }
 
+model PaymentStatus {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+
+  users FederationUser[]
+
+  @@map("payment_statuses")
+}
 
 model FederationUser {
   id               String   @id @default(uuid()) @db.Uuid
@@ -111,6 +119,7 @@ model FederationUser {
   pincode      String
   passwordHash String  @map("password_hash")
   approvalStatus Int   @default(1) @map("approval_status")
+  paymentStatus  Int   @default(1) @map("payment_status")
 
   dynamicFields Json    @default("{}") @map("dynamic_fields")
   createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -119,10 +128,12 @@ model FederationUser {
   federationNode FederationNode @relation(fields: [federationNodeId], references: [id], onDelete: Restrict)
   form           FederationForm @relation(fields: [formId], references: [id], onDelete: Restrict)
   status         ApprovalStatus @relation(fields: [approvalStatus], references: [value], onDelete: Restrict)
+  payment        PaymentStatus  @relation(fields: [paymentStatus], references: [id], onDelete: Restrict)
 
   @@index([federationNodeId])
   @@index([formId])
   @@index([email])
   @@index([phoneNumber])
+  @@index([paymentStatus])
   @@map("federation_users")
 }

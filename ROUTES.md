@@ -5,6 +5,19 @@ This document describes the current backend API endpoints.
 Base URL:
 
 - http://127.0.0.1:3001/api
+- Examples assume `PORT=3001`. Without `PORT`, the server defaults to port `5000`.
+
+## Service Endpoints
+
+### API status
+
+- Endpoint: `GET /`
+- Description: Returns a message confirming that the FedOS backend is running.
+
+### Health check
+
+- Endpoint: `GET /health`
+- Description: Returns `{ "status": "ok", "timestamp": "<ISO timestamp>" }`.
 
 ---
 
@@ -13,7 +26,7 @@ Base URL:
 ### Get all federation nodes
 
 - Endpoint: `GET /api/federation-nodes`
-- Description: Returns all federation nodes that are not soft deleted.
+- Description: Returns all federation nodes that are not soft deleted, including their parent and children.
 
 Example:
 
@@ -73,6 +86,7 @@ curl -X POST http://127.0.0.1:3001/api/federation-nodes \
 ```json
 {
   "name": "National Federation Updated",
+  "parentId": null,
   "isActive": false
 }
 ```
@@ -84,8 +98,23 @@ curl -X PUT http://127.0.0.1:3001/api/federation-nodes/8094cda1-2010-42aa-afe8-f
   -H "Content-Type: application/json" \
   -d '{
     "name": "National Federation Updated",
+    "parentId": null,
     "isActive": false
   }'
+```
+
+---
+
+### Delete a federation node
+
+- Endpoint: `DELETE /api/federation-nodes/:id`
+- Description: Soft deletes a node by setting `isDelete` to `true` and `isActive` to `false`.
+- Response: Returns a success message and the updated node.
+
+Example:
+
+```bash
+curl -X DELETE http://127.0.0.1:3001/api/federation-nodes/8094cda1-2010-42aa-afe8-fb5146352343
 ```
 
 ---
@@ -130,13 +159,16 @@ curl http://127.0.0.1:3001/api/forms/59afa937-3004-4a83-a7de-e88ac8149936
   "name": "Sample Form",
   "version": 1,
   "isActive": true,
+  "subscriptionAmount": 1000,
+  "paymentPeriod": "PRE_APPROVAL",
   "fields": [
     {
       "fieldKey": "email",
       "label": "Email",
       "fieldType": "EMAIL",
       "isRequired": true,
-      "sortOrder": 1
+      "sortOrder": 1,
+      "options": null
     },
     {
       "fieldKey": "age",
@@ -159,13 +191,16 @@ curl -X POST http://127.0.0.1:3001/api/forms \
     "name": "Sample Form",
     "version": 1,
     "isActive": true,
+    "subscriptionAmount": 1000,
+    "paymentPeriod": "PRE_APPROVAL",
     "fields": [
       {
         "fieldKey": "email",
         "label": "Email",
         "fieldType": "EMAIL",
         "isRequired": true,
-        "sortOrder": 1
+        "sortOrder": 1,
+        "options": null
       },
       {
         "fieldKey": "age",
@@ -191,6 +226,8 @@ curl -X POST http://127.0.0.1:3001/api/forms \
   "name": "Sample Form Updated",
   "version": 2,
   "isActive": false,
+  "subscriptionAmount": 1200,
+  "paymentPeriod": "POST_APPROVAL",
   "fields": [
     {
       "id": "27f1369c-530a-478b-bf74-ba5497d799aa",
@@ -198,7 +235,8 @@ curl -X POST http://127.0.0.1:3001/api/forms \
       "label": "Primary Email",
       "fieldType": "EMAIL",
       "isRequired": true,
-      "sortOrder": 1
+      "sortOrder": 1,
+      "options": null
     },
     {
       "fieldKey": "phone",
@@ -220,6 +258,8 @@ curl -X PUT http://127.0.0.1:3001/api/forms/59afa937-3004-4a83-a7de-e88ac8149936
     "name": "Sample Form Updated",
     "version": 2,
     "isActive": false,
+    "subscriptionAmount": 1200,
+    "paymentPeriod": "POST_APPROVAL",
     "fields": [
       {
         "id": "27f1369c-530a-478b-bf74-ba5497d799aa",
@@ -227,7 +267,8 @@ curl -X PUT http://127.0.0.1:3001/api/forms/59afa937-3004-4a83-a7de-e88ac8149936
         "label": "Primary Email",
         "fieldType": "EMAIL",
         "isRequired": true,
-        "sortOrder": 1
+        "sortOrder": 1,
+        "options": null
       },
       {
         "fieldKey": "phone",
@@ -240,12 +281,22 @@ curl -X PUT http://127.0.0.1:3001/api/forms/59afa937-3004-4a83-a7de-e88ac8149936
   }'
 ```
 
+Create requirements:
+
+- `federationNodeId`, `name`, `subscriptionAmount`, and `paymentPeriod` are required.
+- `subscriptionAmount` must be a non-negative number.
+- `paymentPeriod` must be `PRE_APPROVAL` or `POST_APPROVAL`.
+- Supported field types: `TEXT`, `NUMBER`, `DATE`, `SELECT`, `MULTI_SELECT`, `CHECKBOX`, `RADIO`, `BOOLEAN`, `FILE`, `EMAIL`, `PHONE`, and `TEXTAREA`.
+- Field `options` may be an array or a comma/newline-separated string.
+
+Update requests may also contain `federationNodeId`, `subscriptionAmount`, `paymentPeriod`, and field `options`.
+
 ---
 
 ### Delete a form
 
 - Endpoint: `DELETE /api/forms/:id`
-- Description: Permanently deletes a form.
+- Description: Permanently deletes a form and returns `204 No Content`.
 
 Example:
 
@@ -348,6 +399,41 @@ curl -X DELETE http://127.0.0.1:3001/api/approval-statuses/1
 
 ---
 
+## Payment Statuses
+
+Payment statuses are read-only records with `id` and `name`.
+
+Current seeded values:
+
+- `1` — `Payment Pending`
+- `2` — `Payment Done`
+
+### Get all payment statuses
+
+- Endpoint: `GET /api/payment-statuses`
+- Description: Returns all payment statuses ordered by ID.
+
+Example:
+
+```bash
+curl http://127.0.0.1:3001/api/payment-statuses
+```
+
+---
+
+### Get payment status by ID
+
+- Endpoint: `GET /api/payment-statuses/:id`
+- Description: Returns one payment status. A non-numeric ID returns `400`; an unknown ID returns `404`.
+
+Example:
+
+```bash
+curl http://127.0.0.1:3001/api/payment-statuses/1
+```
+
+---
+
 ## Federation Users
 
 ### Get all federation users
@@ -405,6 +491,7 @@ curl http://127.0.0.1:3001/api/federation-users/1b53b56a-6f26-4eff-a11d-d670aaa4
   "pincode": "600001",
   "password": "StrongPass@123",
   "approvalStatus": 1,
+  "paymentStatus": 1,
   "dynamicFields": { "age": 30 }
 }
 ```
@@ -427,9 +514,18 @@ curl -X POST http://127.0.0.1:3001/api/federation-users \
     "pincode": "600001",
     "password": "StrongPass@123",
     "approvalStatus": 1,
+    "paymentStatus": 1,
     "dynamicFields": { "age": 30 }
   }'
 ```
+
+Create requirements:
+
+- Required fields: `federationNodeId`, `formId`, `name`, `email`, `phoneNumber`, `addressLine1`, `city`, `state`, `pincode`, and `password`.
+- Passwords must have at least eight characters and include uppercase, lowercase, numeric, and special characters.
+- `approvalStatus` defaults to `1`.
+- `paymentStatus` defaults to `1`.
+- Responses exclude `passwordHash`.
 
 ---
 
@@ -450,6 +546,7 @@ curl -X POST http://127.0.0.1:3001/api/federation-users \
   - `pincode`
   - `password` (plain password is accepted and stored as a hash)
   - `approvalStatus`
+  - `paymentStatus` (numeric payment-status ID)
   - `dynamicFields`
 
 Example:
@@ -481,6 +578,11 @@ curl -X DELETE http://127.0.0.1:3001/api/federation-users/1b53b56a-6f26-4eff-a11
 ## Notes
 
 - API uses Prisma and PostgreSQL.
+- The root `/` and `/health` endpoints are outside the `/api` prefix.
+- Federation-node deletion is a soft delete.
 - `POST /api/forms` creates nested `FormField` records.
 - `PUT /api/forms/:id` reconciles form fields by updating existing fields, creating new fields, and deleting removed ones.
+- Forms store `subscriptionAmount` and `paymentPeriod`.
 - `approvalStatus` is stored as an integer value and is referenced by `FederationUser.approvalStatus`.
+- `paymentStatus` is stored as an integer ID and references `PaymentStatus.id`.
+- Federation-user responses exclude `passwordHash`.

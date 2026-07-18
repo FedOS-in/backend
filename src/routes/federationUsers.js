@@ -101,6 +101,7 @@ router.post("/", async (req, res) => {
       pincode,
       password,
       approvalStatus,
+      paymentStatus,
       dynamicFields,
     } = req.body
 
@@ -169,6 +170,7 @@ router.post("/", async (req, res) => {
       pincode: pincode.trim(),
       passwordHash: hashPassword(password),
       approvalStatus: typeof approvalStatus === "number" ? approvalStatus : 1,
+      paymentStatus: typeof paymentStatus === "number" ? paymentStatus : 1,
       dynamicFields: safeDynamicFields,
     }
 
@@ -242,6 +244,7 @@ router.put("/:id", async (req, res) => {
       pincode,
       password,
       approvalStatus,
+      paymentStatus,
       dynamicFields,
     } = req.body
 
@@ -279,6 +282,14 @@ router.put("/:id", async (req, res) => {
     }
     if (Object.prototype.hasOwnProperty.call(req.body, "approvalStatus"))
       data.approvalStatus = approvalStatus
+    if (Object.prototype.hasOwnProperty.call(req.body, "paymentStatus")) {
+      if (typeof paymentStatus !== "number") {
+        return res
+          .status(400)
+          .json({ message: "paymentStatus must be a number" })
+      }
+      data.paymentStatus = paymentStatus
+    }
     if (Object.prototype.hasOwnProperty.call(req.body, "dynamicFields"))
       data.dynamicFields =
         typeof dynamicFields === "object" && dynamicFields !== null

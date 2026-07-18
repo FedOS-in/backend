@@ -8,6 +8,7 @@ require('dotenv').config();
 const federationNodeRoutes = require('./routes/federationNodes');
 const formRoutes = require('./routes/forms');
 const approvalStatusRoutes = require('./routes/approvalStatus');
+const paymentStatusRoutes = require('./routes/paymentStatus');
 const federationUserRoutes = require('./routes/federationUsers');
 
 const app = express();
@@ -30,6 +31,7 @@ app.get('/health', (req, res) => {
 app.use('/api/federation-nodes', federationNodeRoutes);
 app.use('/api/forms', formRoutes);
 app.use('/api/approval-statuses', approvalStatusRoutes);
+app.use('/api/payment-statuses', paymentStatusRoutes);
 app.use('/api/federation-users', federationUserRoutes);
 
 app.use((req, res) => {
