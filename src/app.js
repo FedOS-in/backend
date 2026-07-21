@@ -9,6 +9,8 @@ const federationNodeRoutes = require('./routes/federationNodes');
 const formRoutes = require('./routes/forms');
 const approvalStatusRoutes = require('./routes/approvalStatus');
 const paymentStatusRoutes = require('./routes/paymentStatus');
+const currencyTypeRoutes = require('./routes/currencyType');
+const membershipPeriodRoutes = require('./routes/membershipPeriod');
 const federationUserRoutes = require('./routes/federationUsers');
 
 const app = express();
@@ -32,6 +34,8 @@ app.use('/api/federation-nodes', federationNodeRoutes);
 app.use('/api/forms', formRoutes);
 app.use('/api/approval-statuses', approvalStatusRoutes);
 app.use('/api/payment-statuses', paymentStatusRoutes);
+app.use('/api/currency-types', currencyTypeRoutes);
+app.use('/api/membership-periods', membershipPeriodRoutes);
 app.use('/api/federation-users', federationUserRoutes);
 
 app.use((req, res) => {

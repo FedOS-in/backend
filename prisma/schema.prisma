@@ -46,6 +46,24 @@ model FederationNode {
   @@map("federation_nodes")
 }
 
+model CurrencyType {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+
+  forms FederationForm[]
+
+  @@map("currency_types")
+}
+
+model MembershipPeriod {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+
+  forms FederationForm[]
+
+  @@map("membership_periods")
+}
+
 model FederationForm {
   id                 String         @id @default(uuid()) @db.Uuid
   federationNodeId   String         @map("federation_node_id") @db.Uuid
@@ -54,14 +72,20 @@ model FederationForm {
   isActive           Boolean        @default(true) @map("is_active")
   subscriptionAmount Decimal?       @map("subscription_amount") @db.Decimal(12, 2)
   paymentPeriod      PaymentPeriod? @map("payment_period")
+  currencyId         Int?           @map("currency_id")
+  membershipPeriodId Int?           @map("membership_period_id")
   createdAt          DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt          DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  federationNode FederationNode   @relation(fields: [federationNodeId], references: [id], onDelete: Cascade)
-  fields         FormField[]
-  users          FederationUser[]
+  federationNode   FederationNode    @relation(fields: [federationNodeId], references: [id], onDelete: Cascade)
+  currency         CurrencyType?     @relation(fields: [currencyId], references: [id], onDelete: Restrict)
+  membershipPeriod MembershipPeriod? @relation(fields: [membershipPeriodId], references: [id], onDelete: Restrict)
+  fields           FormField[]
+  users            FederationUser[]
 
   @@index([federationNodeId])
+  @@index([currencyId])
+  @@index([membershipPeriodId])
   @@unique([federationNodeId, name, version])
   @@map("federation_forms")
 }

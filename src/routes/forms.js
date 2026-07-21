@@ -74,6 +74,30 @@ function validateSubscriptionFields({ subscriptionAmount, paymentPeriod, require
   }
 }
 
+function normalizeLookupId(value) {
+  if (value == null || value === "") return null
+  const id = Number(value)
+  if (!Number.isInteger(id) || id <= 0) return NaN
+  return id
+}
+
+function validateLookupId(value, fieldName, { required = false } = {}) {
+  const normalized = normalizeLookupId(value)
+  if (required && normalized == null) {
+    return { error: `${fieldName} is required` }
+  }
+  if (Number.isNaN(normalized)) {
+    return { error: `${fieldName} must be a positive integer` }
+  }
+  return { value: normalized }
+}
+
+const FORM_INCLUDE = {
+  fields: true,
+  currency: true,
+  membershipPeriod: true,
+}
+
 function normalizeFieldOptions(options) {
   if (options == null) return null
   if (Array.isArray(options)) return options
@@ -120,6 +144,22 @@ router.post("/", async (req, res) => {
       return res.status(400).json({ message: subscriptionValidation.error })
     }
 
+    const currencyValidation = validateLookupId(body.currencyId, "currencyId", {
+      required: true,
+    })
+    if (currencyValidation.error) {
+      return res.status(400).json({ message: currencyValidation.error })
+    }
+
+    const membershipPeriodValidation = validateLookupId(
+      body.membershipPeriodId,
+      "membershipPeriodId",
+      { required: true },
+    )
+    if (membershipPeriodValidation.error) {
+      return res.status(400).json({ message: membershipPeriodValidation.error })
+    }
+
     const normalizedFields = normalizeIncomingFields(
       Array.isArray(body.fields) ? body.fields : [],
     )
@@ -139,6 +179,8 @@ router.post("/", async (req, res) => {
           isActive: typeof isActive === "boolean" ? isActive : true,
           subscriptionAmount: subscriptionValidation.subscriptionAmount,
           paymentPeriod: subscriptionValidation.paymentPeriod,
+          currencyId: currencyValidation.value,
+          membershipPeriodId: membershipPeriodValidation.value,
         },
       })
 
@@ -159,7 +201,7 @@ router.post("/", async (req, res) => {
 
       return tx.federationForm.findUnique({
         where: { id: createdForm.id },
-        include: { fields: true },
+        include: FORM_INCLUDE,
       })
     })
 
@@ -186,6 +228,14 @@ router.put("/:id", async (req, res) => {
       body,
       "paymentPeriod",
     )
+    const hasCurrencyId = Object.prototype.hasOwnProperty.call(
+      body,
+      "currencyId",
+    )
+    const hasMembershipPeriodId = Object.prototype.hasOwnProperty.call(
+      body,
+      "membershipPeriodId",
+    )
     let subscriptionValidation = null
     if (hasSubscriptionAmount || hasPaymentPeriod) {
       subscriptionValidation = validateSubscriptionFields({
@@ -197,6 +247,27 @@ router.put("/:id", async (req, res) => {
       })
       if (subscriptionValidation.error) {
         return res.status(400).json({ message: subscriptionValidation.error })
+      }
+    }
+
+    let currencyValidation = null
+    if (hasCurrencyId) {
+      currencyValidation = validateLookupId(body.currencyId, "currencyId")
+      if (currencyValidation.error) {
+        return res.status(400).json({ message: currencyValidation.error })
+      }
+    }
+
+    let membershipPeriodValidation = null
+    if (hasMembershipPeriodId) {
+      membershipPeriodValidation = validateLookupId(
+        body.membershipPeriodId,
+        "membershipPeriodId",
+      )
+      if (membershipPeriodValidation.error) {
+        return res
+          .status(400)
+          .json({ message: membershipPeriodValidation.error })
       }
     }
 
@@ -232,6 +303,9 @@ router.put("/:id", async (req, res) => {
         formData.subscriptionAmount = subscriptionValidation.subscriptionAmount
       if (hasPaymentPeriod)
         formData.paymentPeriod = subscriptionValidation.paymentPeriod
+      if (hasCurrencyId) formData.currencyId = currencyValidation.value
+      if (hasMembershipPeriodId)
+        formData.membershipPeriodId = membershipPeriodValidation.value
 
       await tx.federationForm.update({ where: { id }, data: formData })
 
@@ -282,7 +356,7 @@ router.put("/:id", async (req, res) => {
 
       return tx.federationForm.findUnique({
         where: { id },
-        include: { fields: true },
+        include: FORM_INCLUDE,
       })
     })
 
@@ -301,7 +375,7 @@ router.put("/:id", async (req, res) => {
 router.get("/", async (req, res) => {
   try {
     const forms = await prisma.federationForm.findMany({
-      include: { fields: true },
+      include: FORM_INCLUDE,
       orderBy: { createdAt: "desc" },
     })
     res.json(forms)
@@ -316,7 +390,7 @@ router.get("/:id", async (req, res) => {
   try {
     const form = await prisma.federationForm.findUnique({
       where: { id: req.params.id },
-      include: { fields: true },
+      include: FORM_INCLUDE,
     })
     if (!form) return res.status(404).json({ message: "Form not found" })
     res.json(form)
