@@ -11,6 +11,7 @@ const approvalStatusRoutes = require('./routes/approvalStatus');
 const paymentStatusRoutes = require('./routes/paymentStatus');
 const currencyTypeRoutes = require('./routes/currencyType');
 const membershipPeriodRoutes = require('./routes/membershipPeriod');
+const membershipTypeRoutes = require('./routes/membershipType');
 const federationUserRoutes = require('./routes/federationUsers');
 
 const app = express();
@@ -36,6 +37,7 @@ app.use('/api/approval-statuses', approvalStatusRoutes);
 app.use('/api/payment-statuses', paymentStatusRoutes);
 app.use('/api/currency-types', currencyTypeRoutes);
 app.use('/api/membership-periods', membershipPeriodRoutes);
+app.use('/api/membership-types', membershipTypeRoutes);
 app.use('/api/federation-users', federationUserRoutes);
 
 app.use((req, res) => {

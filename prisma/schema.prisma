@@ -39,8 +39,9 @@ model FederationNode {
   parent   FederationNode?  @relation("FederationHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
   children FederationNode[] @relation("FederationHierarchy")
 
-  forms FederationForm[]
-  users FederationUser[]
+  forms           FederationForm[]
+  users           FederationUser[]
+  membershipTypes MembershipType[]
 
   @@index([parentId])
   @@map("federation_nodes")
@@ -50,42 +51,73 @@ model CurrencyType {
   id   Int    @id @default(autoincrement())
   name String @unique
 
-  forms FederationForm[]
+  membershipTypes MembershipType[]
 
   @@map("currency_types")
+}
+
+model Validity {
+  id    Int    @id @default(autoincrement())
+  label String
+  days  Int?
+
+  membershipTypes MembershipType[]
+
+  @@map("validities")
+}
+
+model MembershipType {
+  id               String   @id @default(uuid()) @db.Uuid
+  label            String
+  description      String?
+  federationNodeId String   @map("federation_node_id") @db.Uuid
+  code             String
+  currencyId       Int      @map("currency_id")
+  validityId       Int      @map("validity_id")
+  joiningFee       Decimal  @map("joining_fee") @db.Decimal(12, 2)
+  renewalFee       Decimal  @map("renewal_fee") @db.Decimal(12, 2)
+  /// 1 = Active, 0 = Inactive
+  status           Int      @default(1)
+  createdAt        DateTime @default(now()) @map("created_on") @db.Timestamptz(6)
+
+  federationNode FederationNode @relation(fields: [federationNodeId], references: [id], onDelete: Restrict)
+  currency       CurrencyType   @relation(fields: [currencyId], references: [id], onDelete: Restrict)
+  validity       Validity       @relation(fields: [validityId], references: [id], onDelete: Restrict)
+  forms          FederationForm[]
+  users          FederationUser[]
+
+  @@unique([federationNodeId, code])
+  @@index([federationNodeId])
+  @@index([currencyId])
+  @@index([validityId])
+  @@map("membership_types")
 }
 
 model MembershipPeriod {
   id   Int    @id @default(autoincrement())
   name String @unique
 
-  forms FederationForm[]
-
   @@map("membership_periods")
 }
 
 model FederationForm {
-  id                 String         @id @default(uuid()) @db.Uuid
-  federationNodeId   String         @map("federation_node_id") @db.Uuid
-  name               String
-  version            Int            @default(1)
-  isActive           Boolean        @default(true) @map("is_active")
-  subscriptionAmount Decimal?       @map("subscription_amount") @db.Decimal(12, 2)
-  paymentPeriod      PaymentPeriod? @map("payment_period")
-  currencyId         Int?           @map("currency_id")
-  membershipPeriodId Int?           @map("membership_period_id")
-  createdAt          DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt          DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id               String         @id @default(uuid()) @db.Uuid
+  federationNodeId String         @map("federation_node_id") @db.Uuid
+  name             String
+  version          Int            @default(1)
+  isActive         Boolean        @default(true) @map("is_active")
+  paymentPeriod    PaymentPeriod? @map("payment_period")
+  membershipTypeId String?        @map("membership_type_id") @db.Uuid
+  createdAt        DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  federationNode   FederationNode    @relation(fields: [federationNodeId], references: [id], onDelete: Cascade)
-  currency         CurrencyType?     @relation(fields: [currencyId], references: [id], onDelete: Restrict)
-  membershipPeriod MembershipPeriod? @relation(fields: [membershipPeriodId], references: [id], onDelete: Restrict)
-  fields           FormField[]
-  users            FederationUser[]
+  federationNode FederationNode  @relation(fields: [federationNodeId], references: [id], onDelete: Cascade)
+  membershipType MembershipType? @relation(fields: [membershipTypeId], references: [id], onDelete: Restrict)
+  fields         FormField[]
+  users          FederationUser[]
 
   @@index([federationNodeId])
-  @@index([currencyId])
-  @@index([membershipPeriodId])
+  @@index([membershipTypeId])
   @@unique([federationNodeId, name, version])
   @@map("federation_forms")
 }
@@ -132,6 +164,9 @@ model FederationUser {
   id               String   @id @default(uuid()) @db.Uuid
   federationNodeId String   @map("federation_node_id") @db.Uuid
   formId           String   @map("form_id") @db.Uuid
+  membershipTypeId String?  @map("membership_type_id") @db.Uuid
+  /// Format: {MembershipType.code}-{year}-{sequence}, e.g. AAA-2026-001
+  memberId         String?  @unique @map("member_id")
 
   name        String
   email       String
@@ -149,13 +184,15 @@ model FederationUser {
   createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  federationNode FederationNode @relation(fields: [federationNodeId], references: [id], onDelete: Restrict)
-  form           FederationForm @relation(fields: [formId], references: [id], onDelete: Restrict)
+  federationNode FederationNode  @relation(fields: [federationNodeId], references: [id], onDelete: Restrict)
+  form           FederationForm  @relation(fields: [formId], references: [id], onDelete: Restrict)
+  membershipType MembershipType? @relation(fields: [membershipTypeId], references: [id], onDelete: Restrict)
   status         ApprovalStatus @relation(fields: [approvalStatus], references: [value], onDelete: Restrict)
   payment        PaymentStatus  @relation(fields: [paymentStatus], references: [id], onDelete: Restrict)
 
   @@index([federationNodeId])
   @@index([formId])
+  @@index([membershipTypeId])
   @@index([email])
   @@index([phoneNumber])
   @@index([paymentStatus])
